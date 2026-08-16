@@ -1,112 +1,1286 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SwiftBus - Online Bus Booking</title>
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <script src="{{ url_for('static', filename='script.js') }}" defer></script>
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Smart Traffic Management
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+
 </head>
+
 <body>
 
-    <nav>
-        <div class="logo">🚌 SwiftBus</div>
+<div class="app">
 
-        <ul>
-            <li><a href="/">Home</a></li>
-            <li><a href="/search">Search</a></li>
-            <li><a href="/book">Book Ticket</a></li>
-            <li><a href="/history">Bookings</a></li>
-            <li><a href="/login">Login</a></li>
-        </ul>
-    </nav>
+    <!-- ================================================= -->
+    <!-- SIDEBAR -->
+    <!-- ================================================= -->
 
-    <section class="hero">
+    <aside class="sidebar">
 
-        <div class="hero-content">
+        <div class="brand">
 
-            <h1>Book Bus Tickets Online</h1>
+            <div class="brand-icon">
+                🚦
+            </div>
 
-            <p>Safe • Fast • Comfortable Travel</p>
+            <div>
+                <strong>
+                    Smart Traffic
+                </strong>
 
-            <div class="search-box">
+                <span>
+                    Management
+                </span>
+            </div>
 
-                <input type="text" placeholder="From">
+        </div>
 
-                <input type="text" placeholder="To">
 
-                <input type="date">
+        <nav>
 
-                <button onclick="searchBus()">
-                    Search Buses
+            <button
+                class="nav-btn active"
+                data-section="dashboard"
+            >
+                🏠
+                <span>Dashboard</span>
+            </button>
+
+            <button
+                class="nav-btn"
+                data-section="dataset"
+            >
+                📊
+                <span>Dataset</span>
+            </button>
+
+            <button
+                class="nav-btn"
+                data-section="intersections"
+            >
+                ✦
+                <span>Intersections</span>
+            </button>
+
+            <button
+                class="nav-btn"
+                data-section="optimization"
+            >
+                ⚙
+                <span>AI Optimization</span>
+            </button>
+
+            <button
+                class="nav-btn"
+                data-section="simulation"
+            >
+                ▶
+                <span>Simulation</span>
+            </button>
+
+            <button
+                class="nav-btn"
+                data-section="reports"
+            >
+                ▥
+                <span>Reports</span>
+            </button>
+
+            <button
+                class="nav-btn"
+                data-section="settings"
+            >
+                ⚙
+                <span>Settings</span>
+            </button>
+
+        </nav>
+
+
+        <div class="sidebar-card">
+
+            <div>
+                ✦ ✦ ✦
+            </div>
+
+            <strong>
+                Smarter Signals
+            </strong>
+
+            <span>
+                Smoother Cities
+            </span>
+
+        </div>
+
+    </aside>
+
+
+    <!-- ================================================= -->
+    <!-- MAIN -->
+    <!-- ================================================= -->
+
+    <main class="main">
+
+        <!-- HEADER -->
+
+        <header class="topbar">
+
+            <div>
+
+                <h1>
+                    Adaptive Multi-Agent
+                    Traffic Signal Optimization
+                </h1>
+
+                <p>
+                    AI Search & Constraint-Based Optimization
+                </p>
+
+            </div>
+
+            <div class="top-status">
+
+                <div
+                    id="clock"
+                    class="clock"
+                >
+                    --:--:--
+                </div>
+
+                <div class="notification">
+                    🔔
+                </div>
+
+                <div class="avatar">
+                    A
+                </div>
+
+                <strong>
+                    Admin
+                </strong>
+
+            </div>
+
+        </header>
+
+
+        <!-- ================================================= -->
+        <!-- DASHBOARD -->
+        <!-- ================================================= -->
+
+        <section
+            id="dashboard"
+            class="section active-section"
+        >
+
+            <div class="page-title">
+
+                <h2>
+                    Traffic Dashboard
+                </h2>
+
+                <p>
+                    Real-time overview of traffic conditions.
+                </p>
+
+                <button
+                    class="refresh-btn"
+                    onclick="loadAllData()"
+                >
+                    ↻ Refresh
                 </button>
 
             </div>
 
-        </div>
 
-    </section>
+            <!-- STAT CARDS -->
 
-    <section class="features">
+            <div class="stats-grid">
 
-        <div class="card">
-            <h2>1000+</h2>
-            <p>Buses Available</p>
-        </div>
+                <div class="stat-card">
 
-        <div class="card">
-            <h2>500+</h2>
-            <p>Routes</p>
-        </div>
+                    <div class="stat-icon blue">
+                        ✦
+                    </div>
 
-        <div class="card">
-            <h2>24/7</h2>
-            <p>Customer Support</p>
-        </div>
+                    <div>
 
-        <div class="card">
-            <h2>100%</h2>
-            <p>Secure Payment</p>
-        </div>
+                        <span>
+                            TOTAL INTERSECTIONS
+                        </span>
 
-    </section>
+                        <strong id="totalIntersections">
+                            --
+                        </strong>
 
-    <section class="popular">
+                        <small>
+                            Active intersections
+                        </small>
 
-        <h2>Popular Routes</h2>
+                    </div>
 
-        <div class="routes">
+                </div>
 
-            <div class="route">
-                Hyderabad → Bangalore
+
+                <div class="stat-card">
+
+                    <div class="stat-icon green">
+                        🚗
+                    </div>
+
+                    <div>
+
+                        <span>
+                            TOTAL VEHICLES
+                        </span>
+
+                        <strong id="totalVehicles">
+                            --
+                        </strong>
+
+                        <small>
+                            Across all records
+                        </small>
+
+                    </div>
+
+                </div>
+
+
+                <div class="stat-card">
+
+                    <div class="stat-icon orange">
+                        ◷
+                    </div>
+
+                    <div>
+
+                        <span>
+                            AVG WAITING TIME
+                        </span>
+
+                        <strong>
+
+                            <span id="avgWaiting">
+                                --
+                            </span>
+
+                            sec
+
+                        </strong>
+
+                        <small>
+                            Average recorded waiting
+                        </small>
+
+                    </div>
+
+                </div>
+
+
+                <div class="stat-card">
+
+                    <div class="stat-icon purple">
+                        🚦
+                    </div>
+
+                    <div>
+
+                        <span>
+                            TRAFFIC STATUS
+                        </span>
+
+                        <strong
+                            id="trafficStatus"
+                            class="status-text"
+                        >
+                            --
+                        </strong>
+
+                        <small>
+                            Current congestion
+                        </small>
+
+                    </div>
+
+                </div>
+
             </div>
 
-            <div class="route">
-                Chennai → Hyderabad
+
+            <!-- DASHBOARD CONTENT -->
+
+            <div class="dashboard-grid">
+
+                <!-- JUNCTION LIST -->
+
+                <div class="panel">
+
+                    <div class="panel-header">
+
+                        <div>
+
+                            <h3>
+                                Intersections Overview
+                            </h3>
+
+                            <p>
+                                Traffic by junction
+                            </p>
+
+                        </div>
+
+                        <span class="live">
+                            ● LIVE
+                        </span>
+
+                    </div>
+
+                    <div
+                        id="junctionCards"
+                        class="junction-list"
+                    >
+
+                        <div class="loading">
+                            Loading junctions...
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- INTERSECTION -->
+
+                <div class="panel intersection-panel">
+
+                    <div class="panel-header">
+
+                        <div>
+
+                            <h3>
+                                Live Intersection
+                            </h3>
+
+                            <p>
+                                Select a junction
+                            </p>
+
+                        </div>
+
+                        <select
+                            id="dashboardJunction"
+                        >
+
+                            <option value="1">
+                                Junction 1
+                            </option>
+
+                            <option value="2">
+                                Junction 2
+                            </option>
+
+                            <option value="3">
+                                Junction 3
+                            </option>
+
+                            <option value="4">
+                                Junction 4
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div
+                        id="intersectionVisual"
+                        class="intersection"
+                    >
+
+                        <div class="road vertical"></div>
+
+                        <div class="road horizontal"></div>
+
+                        <div class="intersection-center">
+
+                            <span>
+                                ↑
+                            </span>
+
+                            <span>
+                                ←
+                            </span>
+
+                            <span>
+                                →
+                            </span>
+
+                            <span>
+                                ↓
+                            </span>
+
+                        </div>
+
+
+                        <div
+                            id="northRoad"
+                            class="road-info north-road"
+                        >
+                            NORTH
+                            <strong>-- cars</strong>
+                        </div>
+
+                        <div
+                            id="southRoad"
+                            class="road-info south-road"
+                        >
+                            SOUTH
+                            <strong>-- cars</strong>
+                        </div>
+
+                        <div
+                            id="eastRoad"
+                            class="road-info east-road"
+                        >
+                            EAST
+                            <strong>-- cars</strong>
+                        </div>
+
+                        <div
+                            id="westRoad"
+                            class="road-info west-road"
+                        >
+                            WEST
+                            <strong>-- cars</strong>
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- OPTIMIZATION -->
+
+                <div class="panel">
+
+                    <div class="panel-header">
+
+                        <div>
+
+                            <h3>
+                                AI Optimized Signal Timings
+                            </h3>
+
+                            <p>
+                                Constraint-based result
+                            </p>
+
+                        </div>
+
+                        <span class="ai-badge">
+                            AI
+                        </span>
+
+                    </div>
+
+
+                    <div class="signal-table">
+
+                        <div class="signal-row header">
+
+                            <span>
+                                Direction
+                            </span>
+
+                            <span>
+                                Green
+                            </span>
+
+                            <span>
+                                Yellow
+                            </span>
+
+                            <span>
+                                Red
+                            </span>
+
+                        </div>
+
+
+                        <div
+                            id="signalRows"
+                        >
+
+                            <!-- JS -->
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="optimization-result">
+
+                        <div>
+
+                            <span>
+                                Algorithm
+                            </span>
+
+                            <strong>
+                                A* Search + CSP
+                            </strong>
+
+                        </div>
+
+                        <div>
+
+                            <span>
+                                Objective
+                            </span>
+
+                            <strong>
+                                Minimize Waiting Time
+                            </strong>
+
+                        </div>
+
+                        <div>
+
+                            <span>
+                                Cycle Time
+                            </span>
+
+                            <strong>
+                                <span id="cycleTime">
+                                    120
+                                </span>
+                                sec
+                            </strong>
+
+                        </div>
+
+                        <div>
+
+                            <span>
+                                Improvement
+                            </span>
+
+                            <strong
+                                id="improvement"
+                                class="green-text"
+                            >
+                                --
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+                    <button
+                        id="dashboardOptimizeBtn"
+                        class="primary-btn"
+                    >
+                        ▶ Run AI Optimization
+                    </button>
+
+                </div>
+
             </div>
 
-            <div class="route">
-                Vijayawada → Visakhapatnam
+
+            <!-- BOTTOM -->
+
+            <div class="dashboard-bottom">
+
+                <div class="panel">
+
+                    <div class="panel-header">
+
+                        <div>
+
+                            <h3>
+                                Recent Traffic Records
+                            </h3>
+
+                            <p>
+                                Data from Aiven MySQL
+                            </p>
+
+                        </div>
+
+                        <button
+                            class="small-btn"
+                            data-section="dataset"
+                        >
+                            View Dataset
+                        </button>
+
+                    </div>
+
+
+                    <div
+                        id="recentRecords"
+                        class="mini-table"
+                    >
+
+                        Loading...
+
+                    </div>
+
+                </div>
+
+
+                <div class="panel">
+
+                    <div class="panel-header">
+
+                        <div>
+
+                            <h3>
+                                Database Status
+                            </h3>
+
+                        </div>
+
+                    </div>
+
+                    <div class="database-status">
+
+                        <div class="db-icon">
+                            ✓
+                        </div>
+
+                        <div>
+
+                            <strong>
+                                Aiven MySQL
+                            </strong>
+
+                            <span id="databaseMessage">
+                                Checking connection...
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
             </div>
 
-            <div class="route">
-                Bengaluru → Mysore
+        </section>
+
+
+        <!-- ================================================= -->
+        <!-- DATASET -->
+        <!-- ================================================= -->
+
+        <section
+            id="dataset"
+            class="section"
+        >
+
+            <div class="page-title">
+
+                <h2>
+                    Traffic Dataset
+                </h2>
+
+                <p>
+                    Select a junction to view its actual
+                    traffic records.
+                </p>
+
             </div>
 
-        </div>
 
-    </section>
+            <div class="panel">
 
-    <footer>
+                <div class="dataset-controls">
 
-        <h3>SwiftBus</h3>
+                    <div>
 
-        <p>Fast, Safe and Reliable Bus Booking System</p>
+                        <label>
+                            SELECT JUNCTION
+                        </label>
 
-        <p>© 2026 SwiftBus. All Rights Reserved.</p>
+                        <select
+                            id="datasetJunctionSelect"
+                        >
 
-    </footer>
+                            <option value="all">
+                                All Junctions
+                            </option>
+
+                            <option value="1">
+                                Junction 1
+                            </option>
+
+                            <option value="2">
+                                Junction 2
+                            </option>
+
+                            <option value="3">
+                                Junction 3
+                            </option>
+
+                            <option value="4">
+                                Junction 4
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="record-count">
+
+                        <span>
+                            Records
+                        </span>
+
+                        <strong id="junctionRecordCount">
+                            0
+                        </strong>
+
+                    </div>
+
+
+                    <button
+                        id="uploadButton"
+                        class="primary-btn"
+                    >
+                        ⬆ Upload CSV
+                    </button>
+
+                    <input
+                        id="datasetFile"
+                        type="file"
+                        accept=".csv"
+                        hidden
+                    >
+
+                </div>
+
+            </div>
+
+
+            <div class="panel">
+
+                <div class="panel-header">
+
+                    <div>
+
+                        <h3 id="datasetTitle">
+                            All Junctions
+                        </h3>
+
+                        <p id="datasetSubtitle">
+                            Loading traffic records...
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="table-wrapper">
+
+                    <table>
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    ID
+                                </th>
+
+                                <th>
+                                    Junction
+                                </th>
+
+                                <th>
+                                    North
+                                </th>
+
+                                <th>
+                                    South
+                                </th>
+
+                                <th>
+                                    East
+                                </th>
+
+                                <th>
+                                    West
+                                </th>
+
+                                <th>
+                                    Vehicles
+                                </th>
+
+                                <th>
+                                    Speed
+                                </th>
+
+                                <th>
+                                    Occupancy
+                                </th>
+
+                                <th>
+                                    Flow
+                                </th>
+
+                                <th>
+                                    Time
+                                </th>
+
+                                <th>
+                                    Waiting
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+                        <tbody
+                            id="filteredDatasetRows"
+                        >
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================================================= -->
+        <!-- INTERSECTIONS -->
+        <!-- ================================================= -->
+
+        <section
+            id="intersections"
+            class="section"
+        >
+
+            <div class="page-title">
+
+                <h2>
+                    Intersections
+                </h2>
+
+                <p>
+                    Vehicle distribution on every road.
+                </p>
+
+            </div>
+
+
+            <div
+                id="intersectionCards"
+                class="four-grid"
+            >
+
+            </div>
+
+        </section>
+
+
+        <!-- ================================================= -->
+        <!-- AI OPTIMIZATION -->
+        <!-- ================================================= -->
+
+        <section
+            id="optimization"
+            class="section"
+        >
+
+            <div class="page-title">
+
+                <h2>
+                    AI Traffic Optimization
+                </h2>
+
+                <p>
+                    Optimize signal timing for a selected
+                    junction.
+                </p>
+
+            </div>
+
+
+            <div class="panel optimization-page">
+
+                <label>
+                    SELECT JUNCTION
+                </label>
+
+                <select
+                    id="optimizationJunction"
+                >
+
+                    <option value="1">
+                        Junction 1
+                    </option>
+
+                    <option value="2">
+                        Junction 2
+                    </option>
+
+                    <option value="3">
+                        Junction 3
+                    </option>
+
+                    <option value="4">
+                        Junction 4
+                    </option>
+
+                </select>
+
+
+                <button
+                    id="runOptimization"
+                    class="primary-btn"
+                >
+                    ▶ Run AI Optimization
+                </button>
+
+
+                <div
+                    id="optimizationOutput"
+                    class="optimization-output"
+                >
+
+                    Select a junction and run optimization.
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================================================= -->
+        <!-- SIMULATION -->
+        <!-- ================================================= -->
+
+        <section
+            id="simulation"
+            class="section"
+        >
+
+            <div class="page-title">
+
+                <h2>
+                    Traffic Simulation
+                </h2>
+
+                <p>
+                    Visual simulation using the selected
+                    junction traffic values.
+                </p>
+
+            </div>
+
+
+            <div class="panel simulation-panel">
+
+                <select
+                    id="simulationJunction"
+                >
+
+                    <option value="1">
+                        Junction 1
+                    </option>
+
+                    <option value="2">
+                        Junction 2
+                    </option>
+
+                    <option value="3">
+                        Junction 3
+                    </option>
+
+                    <option value="4">
+                        Junction 4
+                    </option>
+
+                </select>
+
+
+                <button
+                    id="startSimulation"
+                    class="primary-btn"
+                >
+                    ▶ Start Simulation
+                </button>
+
+
+                <button
+                    id="stopSimulation"
+                    class="secondary-btn"
+                >
+                    ■ Stop
+                </button>
+
+
+                <div
+                    id="simulationArea"
+                    class="simulation-area"
+                >
+
+                    <div class="sim-road vertical"></div>
+
+                    <div class="sim-road horizontal"></div>
+
+                    <div
+                        id="simCars"
+                        class="sim-cars"
+                    >
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================================================= -->
+        <!-- REPORTS -->
+        <!-- ================================================= -->
+
+        <section
+            id="reports"
+            class="section"
+        >
+
+            <div class="page-title">
+
+                <h2>
+                    Traffic Reports
+                </h2>
+
+                <p>
+                    Summary generated from your database.
+                </p>
+
+            </div>
+
+
+            <div class="four-grid">
+
+                <div class="report-card">
+
+                    <span>
+                        Records
+                    </span>
+
+                    <strong id="reportRecords">
+                        --
+                    </strong>
+
+                </div>
+
+
+                <div class="report-card">
+
+                    <span>
+                        Vehicles
+                    </span>
+
+                    <strong id="reportVehicles">
+                        --
+                    </strong>
+
+                </div>
+
+
+                <div class="report-card">
+
+                    <span>
+                        Avg Waiting
+                    </span>
+
+                    <strong id="reportWaiting">
+                        --
+                    </strong>
+
+                </div>
+
+
+                <div class="report-card">
+
+                    <span>
+                        Avg Speed
+                    </span>
+
+                    <strong id="reportSpeed">
+                        --
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="panel">
+
+                <div class="panel-header">
+
+                    <h3>
+                        Junction Report
+                    </h3>
+
+                </div>
+
+                <div
+                    id="reportTable"
+                    class="report-list"
+                >
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================================================= -->
+        <!-- SETTINGS -->
+        <!-- ================================================= -->
+
+        <section
+            id="settings"
+            class="section"
+        >
+
+            <div class="page-title">
+
+                <h2>
+                    Settings
+                </h2>
+
+                <p>
+                    Application information and connection
+                    status.
+                </p>
+
+            </div>
+
+
+            <div class="settings-grid">
+
+                <div class="panel">
+
+                    <h3>
+                        Application
+                    </h3>
+
+                    <div class="setting-row">
+
+                        <span>
+                            Application
+                        </span>
+
+                        <strong>
+                            Smart Traffic Management
+                        </strong>
+
+                    </div>
+
+                    <div class="setting-row">
+
+                        <span>
+                            Optimization
+                        </span>
+
+                        <strong>
+                            A* + Constraint Optimization
+                        </strong>
+
+                    </div>
+
+                    <div class="setting-row">
+
+                        <span>
+                            Database
+                        </span>
+
+                        <strong>
+                            Aiven MySQL
+                        </strong>
+
+                    </div>
+
+                </div>
+
+
+                <div class="panel">
+
+                    <h3>
+                        Connection
+                    </h3>
+
+                    <div
+                        id="settingsConnection"
+                        class="connection-box"
+                    >
+
+                        Checking...
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <footer>
+
+            Smart Traffic Management System
+
+            <span>
+                Adaptive Multi-Agent Traffic Signal
+                Optimization
+            </span>
+
+        </footer>
+
+    </main>
+
+</div>
+
+
+<script
+    src="{{ url_for('static', filename='script.js') }}"
+></script>
 
 </body>
+
 </html>
