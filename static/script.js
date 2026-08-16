@@ -1,6 +1,6 @@
 // ============================================================
 // SMART TRAFFIC MANAGEMENT
-// FINAL FRONTEND JAVASCRIPT
+// FINAL FRONTEND SCRIPT
 // ============================================================
 
 let trafficData = [];
@@ -10,7 +10,7 @@ let simulationTimer = null;
 
 
 // ============================================================
-// HELPERS
+// BASIC HELPERS
 // ============================================================
 
 function $(id) {
@@ -23,18 +23,20 @@ function number(value, decimals = 0) {
     const n = Number(value);
 
     if (!Number.isFinite(n)) {
-        return decimals ? "0.00" : "0";
+        return 0;
     }
 
     return decimals
-        ? n.toFixed(decimals)
-        : Math.round(n).toString();
+        ? Number(n.toFixed(decimals))
+        : Math.round(n);
 }
 
 
 function formatNumber(value) {
 
-    return Number(value || 0).toLocaleString("en-IN");
+    const n = Number(value || 0);
+
+    return n.toLocaleString("en-IN");
 }
 
 
@@ -56,14 +58,25 @@ function escapeHTML(value) {
 }
 
 
-function showError(element, message) {
+function showTableError(message) {
 
-    if (!element) return;
+    const tbody = $("filteredDatasetRows");
 
-    element.innerHTML = `
-        <div class="error">
-            ${escapeHTML(message)}
-        </div>
+    if (!tbody) return;
+
+    tbody.innerHTML = `
+        <tr>
+            <td
+                colspan="12"
+                style="
+                    text-align:center;
+                    padding:35px;
+                    color:#ff6b6b;
+                "
+            >
+                ❌ ${escapeHTML(message)}
+            </td>
+        </tr>
     `;
 }
 
@@ -76,9 +89,8 @@ document.querySelectorAll(".nav-btn").forEach(button => {
 
     button.addEventListener("click", () => {
 
-        const section = button.dataset.section;
+        openSection(button.dataset.section);
 
-        openSection(section);
     });
 
 });
@@ -98,10 +110,11 @@ document.querySelectorAll(".small-btn[data-section]")
 
 function openSection(section) {
 
-    document.querySelectorAll(".section")
-        .forEach(element => {
+    document
+        .querySelectorAll(".section")
+        .forEach(el => {
 
-            element.classList.remove("active-section");
+            el.classList.remove("active-section");
 
         });
 
@@ -115,7 +128,8 @@ function openSection(section) {
     }
 
 
-    document.querySelectorAll(".nav-btn")
+    document
+        .querySelectorAll(".nav-btn")
         .forEach(button => {
 
             button.classList.toggle(
@@ -127,22 +141,30 @@ function openSection(section) {
 
 
     if (section === "dataset") {
+
         renderDataset();
+
     }
 
 
     if (section === "intersections") {
+
         renderIntersections();
+
     }
 
 
     if (section === "reports") {
+
         renderReports();
+
     }
 
 
     if (section === "settings") {
+
         testDatabase();
+
     }
 
 }
@@ -154,12 +176,10 @@ function openSection(section) {
 
 function updateClock() {
 
-    const now = new Date();
-
     if ($("clock")) {
 
         $("clock").textContent =
-            now.toLocaleTimeString();
+            new Date().toLocaleTimeString();
 
     }
 
@@ -172,48 +192,19 @@ updateClock();
 
 
 // ============================================================
-// LOAD EVERYTHING
-// ============================================================
-
-async function loadAllData() {
-
-    console.log("Loading Smart Traffic data...");
-
-    await Promise.all([
-        loadStatistics(),
-        loadTrafficData(),
-        loadJunctions(),
-        testDatabase()
-    ]);
-
-
-    updateSelectedIntersection();
-
-    renderDataset();
-
-    renderIntersections();
-
-    renderReports();
-
-    console.log(
-        "Traffic records loaded:",
-        trafficData.length
-    );
-}
-
-
-// ============================================================
-// DATABASE TEST
+// DATABASE CONNECTION
 // ============================================================
 
 async function testDatabase() {
 
     try {
 
-        const response =
-            await fetch(
-                "/api/test-db?cache=" + Date.now()
-            );
+        const response = await fetch(
+            "/api/test-db",
+            {
+                cache: "no-store"
+            }
+        );
 
 
         const data =
@@ -243,15 +234,20 @@ async function testDatabase() {
         if ($("settingsConnection")) {
 
             $("settingsConnection").innerHTML = `
-                <strong>✓ Connected successfully</strong><br>
-                Database: ${escapeHTML(
-                    data.database || "Aiven MySQL"
-                )}<br>
-                Records:
-                ${formatNumber(data.total_records)}
+                ✓ Connected successfully<br>
+                Database: ${data.database || "Aiven MySQL"}<br>
+                Records: ${formatNumber(
+                    data.total_records
+                )}
             `;
 
         }
+
+
+        console.log(
+            "Database connected:",
+            data.total_records
+        );
 
     }
     catch (error) {
@@ -272,12 +268,9 @@ async function testDatabase() {
 
         if ($("settingsConnection")) {
 
-            $("settingsConnection").innerHTML = `
-                <div class="error">
-                    ✕ Database error<br>
-                    ${escapeHTML(error.message)}
-                </div>
-            `;
+            $("settingsConnection").innerHTML =
+                `✕ Database error<br>
+                 ${escapeHTML(error.message)}`;
 
         }
 
@@ -294,10 +287,12 @@ async function loadStatistics() {
 
     try {
 
-        const response =
-            await fetch(
-                "/api/statistics?cache=" + Date.now()
-            );
+        const response = await fetch(
+            "/api/statistics",
+            {
+                cache: "no-store"
+            }
+        );
 
 
         const data =
@@ -308,7 +303,7 @@ async function loadStatistics() {
 
             throw new Error(
                 data.message ||
-                "Statistics unavailable"
+                "Statistics failed"
             );
 
         }
@@ -318,7 +313,7 @@ async function loadStatistics() {
 
             $("totalIntersections")
                 .textContent =
-                data.intersections;
+                data.intersections ?? 4;
 
         }
 
@@ -341,16 +336,22 @@ async function loadStatistics() {
         }
 
 
+        const status =
+            data.traffic_status ||
+            calculateOverallStatus(
+                data.waiting
+            );
+
+
         if ($("trafficStatus")) {
 
             $("trafficStatus")
-                .textContent =
-                data.traffic_status;
+                .textContent = status;
 
-
-            $("trafficStatus").className =
+            $("trafficStatus")
+                .className =
                 "status-text " +
-                statusClass(data.traffic_status);
+                statusClass(status);
 
         }
 
@@ -359,7 +360,10 @@ async function loadStatistics() {
 
             $("reportRecords")
                 .textContent =
-                formatNumber(data.total_records);
+                formatNumber(
+                    data.total_records ??
+                    data.records
+                );
 
         }
 
@@ -368,7 +372,9 @@ async function loadStatistics() {
 
             $("reportVehicles")
                 .textContent =
-                formatNumber(data.vehicles);
+                formatNumber(
+                    data.vehicles
+                );
 
         }
 
@@ -404,18 +410,51 @@ async function loadStatistics() {
 }
 
 
+function calculateOverallStatus(waiting) {
+
+    const w =
+        Number(waiting || 0);
+
+
+    if (w < 20) {
+
+        return "LOW";
+
+    }
+
+
+    if (w < 40) {
+
+        return "MEDIUM";
+
+    }
+
+
+    return "HIGH";
+
+}
+
+
 // ============================================================
 // LOAD ACTUAL DATASET
-// ============================================================
 //
 // IMPORTANT:
 //
-// /api/traffic = junction summaries
+// DO NOT use:
 //
-// /api/dataset = ACTUAL traffic records
+// /api/dataset
 //
-// We use /api/dataset here.
+// That endpoint is a summary.
 //
+// Actual records are obtained from:
+//
+// /api/traffic-by-junction
+//
+// Backend maximum = 500 records/request.
+//
+// We therefore load 5 pages for each junction.
+//
+// 4 junctions × 2500 = 10,000 records.
 // ============================================================
 
 async function loadTrafficData() {
@@ -423,56 +462,166 @@ async function loadTrafficData() {
     try {
 
         console.log(
-            "Loading actual dataset..."
+            "Loading actual traffic dataset..."
         );
 
 
-        const response =
-            await fetch(
-                "/api/dataset?limit=10000&cache=" +
-                Date.now()
-            );
+        const allRecords = [];
 
 
-        if (!response.ok) {
+        // Each junction contains 2500 records.
+        // Backend allows max 500 per request.
 
-            throw new Error(
-                "Dataset API returned HTTP " +
-                response.status
-            );
+        const recordsPerJunction = 2500;
+        const pageSize = 500;
+
+        const requests = [];
+
+
+        for (
+            let junction = 1;
+            junction <= 4;
+            junction++
+        ) {
+
+            const totalPages =
+                Math.ceil(
+                    recordsPerJunction /
+                    pageSize
+                );
+
+
+            for (
+                let page = 1;
+                page <= totalPages;
+                page++
+            ) {
+
+                requests.push(
+
+                    fetch(
+                        `/api/traffic-by-junction` +
+                        `?junction=${junction}` +
+                        `&page=${page}` +
+                        `&limit=${pageSize}`,
+                        {
+                            cache: "no-store"
+                        }
+                    )
+                    .then(async response => {
+
+                        if (!response.ok) {
+
+                            throw new Error(
+                                `Junction ${junction}, ` +
+                                `page ${page}: ` +
+                                `HTTP ${response.status}`
+                            );
+
+                        }
+
+
+                        return response.json();
+
+                    })
+
+                );
+
+            }
 
         }
 
 
-        const result =
-            await response.json();
+        const results =
+            await Promise.all(requests);
 
 
-        if (result.status !== "success") {
+        results.forEach(result => {
 
-            throw new Error(
-                result.message ||
-                "Dataset loading failed"
-            );
+            if (
+                result.status !==
+                "success"
+            ) {
 
-        }
+                throw new Error(
+                    result.message ||
+                    "Dataset request failed"
+                );
 
-
-        if (!Array.isArray(result.data)) {
-
-            throw new Error(
-                "Dataset API did not return an array"
-            );
-
-        }
+            }
 
 
-        trafficData = result.data;
+            if (
+                Array.isArray(
+                    result.records
+                )
+            ) {
+
+                allRecords.push(
+                    ...result.records
+                );
+
+            }
+
+        });
+
+
+        // Sort by database ID.
+
+        allRecords.sort(
+            (a, b) =>
+                Number(a.id || 0) -
+                Number(b.id || 0)
+        );
+
+
+        trafficData =
+            allRecords;
 
 
         console.log(
-            "Actual records loaded:",
+            "================================"
+        );
+
+        console.log(
+            "DATASET LOADED SUCCESSFULLY"
+        );
+
+        console.log(
+            "Total records:",
             trafficData.length
+        );
+
+        console.log(
+            "Junction 1:",
+            trafficData.filter(
+                r => Number(r.junction) === 1
+            ).length
+        );
+
+        console.log(
+            "Junction 2:",
+            trafficData.filter(
+                r => Number(r.junction) === 2
+            ).length
+        );
+
+        console.log(
+            "Junction 3:",
+            trafficData.filter(
+                r => Number(r.junction) === 3
+            ).length
+        );
+
+        console.log(
+            "Junction 4:",
+            trafficData.filter(
+                r => Number(r.junction) === 4
+            ).length
+        );
+
+        console.log(
+            "================================"
         );
 
 
@@ -486,7 +635,7 @@ async function loadTrafficData() {
     catch (error) {
 
         console.error(
-            "Traffic dataset error:",
+            "DATASET ERROR:",
             error
         );
 
@@ -494,8 +643,7 @@ async function loadTrafficData() {
         trafficData = [];
 
 
-        showError(
-            $("filteredDatasetRows"),
+        showTableError(
             "Unable to load dataset: " +
             error.message
         );
@@ -508,24 +656,34 @@ async function loadTrafficData() {
 
         }
 
+
+        if ($("datasetSubtitle")) {
+
+            $("datasetSubtitle")
+                .textContent =
+                "Unable to load traffic records";
+
+        }
+
     }
 
 }
 
 
 // ============================================================
-// LOAD JUNCTION SUMMARY
+// JUNCTION SUMMARIES
 // ============================================================
 
 async function loadJunctions() {
 
     try {
 
-        const response =
-            await fetch(
-                "/api/junctions?cache=" +
-                Date.now()
-            );
+        const response = await fetch(
+            "/api/junctions",
+            {
+                cache: "no-store"
+            }
+        );
 
 
         const data =
@@ -547,6 +705,10 @@ async function loadJunctions() {
 
         renderJunctionCards();
 
+        renderIntersections();
+
+        renderReports();
+
     }
     catch (error) {
 
@@ -566,7 +728,7 @@ async function loadJunctions() {
 
 
 // ============================================================
-// DASHBOARD JUNCTION CARDS
+// JUNCTION CARDS
 // ============================================================
 
 function renderJunctionCards() {
@@ -580,11 +742,10 @@ function renderJunctionCards() {
 
     if (!junctionData.length) {
 
-        container.innerHTML = `
-            <div class="loading">
+        container.innerHTML =
+            `<div class="loading">
                 No junction data found.
-            </div>
-        `;
+             </div>`;
 
         return;
 
@@ -594,18 +755,22 @@ function renderJunctionCards() {
     container.innerHTML =
         junctionData.map(item => {
 
+            const id =
+                Number(
+                    item.id ||
+                    item.junction
+                );
+
+
             return `
 
                 <div
                     class="junction-card ${
-                        Number(item.id || item.junction) ===
-                        Number(selectedJunction)
+                        id === selectedJunction
                             ? "selected"
                             : ""
                     }"
-                    onclick="selectJunction(
-                        ${Number(item.id || item.junction)}
-                    )"
+                    onclick="selectJunction(${id})"
                 >
 
                     <div
@@ -613,23 +778,27 @@ function renderJunctionCards() {
                     >
 
                         <h4>
-                            ${escapeHTML(
-                                item.name ||
-                                `Junction ${
-                                    item.id ||
-                                    item.junction
-                                }`
-                            )}
+                            ${
+                                escapeHTML(
+                                    item.name ||
+                                    `Junction ${id}`
+                                )
+                            }
                         </h4>
 
                         <span
                             class="badge ${
-                                statusClass(item.status)
+                                statusClass(
+                                    item.status
+                                )
                             }"
                         >
-                            ${escapeHTML(
-                                item.status || "LOW"
-                            )}
+                            ${
+                                escapeHTML(
+                                    item.status ||
+                                    "LOW"
+                                )
+                            }
                         </span>
 
                     </div>
@@ -646,12 +815,13 @@ function renderJunctionCards() {
                             </span>
 
                             <strong>
-                                ${number(
-                                    item.average_vehicles ??
-                                    item.vehicles ??
-                                    0,
-                                    1
-                                )}
+                                ${
+                                    number(
+                                        item.average_vehicles ??
+                                        item.vehicles,
+                                        1
+                                    )
+                                }
                             </strong>
 
                         </div>
@@ -664,12 +834,13 @@ function renderJunctionCards() {
                             </span>
 
                             <strong>
-                                ${number(
-                                    item.waiting_time ??
-                                    item.waiting ??
-                                    0,
-                                    1
-                                )}s
+                                ${
+                                    number(
+                                        item.waiting_time ??
+                                        item.waiting,
+                                        1
+                                    )
+                                }s
                             </strong>
 
                         </div>
@@ -682,12 +853,13 @@ function renderJunctionCards() {
                             </span>
 
                             <strong>
-                                ${number(
-                                    item.average_speed ??
-                                    item.speed ??
-                                    0,
-                                    1
-                                )}
+                                ${
+                                    number(
+                                        item.average_speed ??
+                                        item.speed,
+                                        1
+                                    )
+                                }
                             </strong>
 
                         </div>
@@ -704,7 +876,7 @@ function renderJunctionCards() {
 
 
 // ============================================================
-// SELECT JUNCTION
+// JUNCTION SELECTION
 // ============================================================
 
 function selectJunction(junction) {
@@ -715,7 +887,8 @@ function selectJunction(junction) {
 
     if ($("dashboardJunction")) {
 
-        $("dashboardJunction").value =
+        $("dashboardJunction")
+            .value =
             selectedJunction;
 
     }
@@ -723,7 +896,8 @@ function selectJunction(junction) {
 
     if ($("optimizationJunction")) {
 
-        $("optimizationJunction").value =
+        $("optimizationJunction")
+            .value =
             selectedJunction;
 
     }
@@ -731,32 +905,32 @@ function selectJunction(junction) {
 
     if ($("simulationJunction")) {
 
-        $("simulationJunction").value =
+        $("simulationJunction")
+            .value =
             selectedJunction;
-
-    }
-
-
-    if ($("datasetJunctionSelect")) {
-
-        $("datasetJunctionSelect").value =
-            String(selectedJunction);
 
     }
 
 
     renderJunctionCards();
 
-    renderDataset();
-
     updateSelectedIntersection();
+
+
+    if ($("datasetJunctionSelect")) {
+
+        $("datasetJunctionSelect")
+            .value =
+            String(selectedJunction);
+
+        renderDataset();
+
+    }
 
 }
 
 
-// ============================================================
-// DASHBOARD JUNCTION SELECT
-// ============================================================
+// Dashboard selector
 
 $("dashboardJunction")
     ?.addEventListener(
@@ -771,9 +945,7 @@ $("dashboardJunction")
     );
 
 
-// ============================================================
-// DATASET JUNCTION SELECT
-// ============================================================
+// Dataset selector
 
 $("datasetJunctionSelect")
     ?.addEventListener(
@@ -784,16 +956,52 @@ $("datasetJunctionSelect")
                 this.value;
 
 
-            if (
-                value !== "all" &&
-                value !== ""
-            ) {
+            // "all" means don't
+            // change dashboard selection.
 
-                selectedJunction =
-                    Number(value);
+            if (value === "all") {
+
+                renderDataset();
+
+                return;
 
             }
 
+
+            selectedJunction =
+                Number(value);
+
+
+            if ($("dashboardJunction")) {
+
+                $("dashboardJunction")
+                    .value =
+                    selectedJunction;
+
+            }
+
+
+            if ($("optimizationJunction")) {
+
+                $("optimizationJunction")
+                    .value =
+                    selectedJunction;
+
+            }
+
+
+            if ($("simulationJunction")) {
+
+                $("simulationJunction")
+                    .value =
+                    selectedJunction;
+
+            }
+
+
+            renderJunctionCards();
+
+            updateSelectedIntersection();
 
             renderDataset();
 
@@ -802,50 +1010,16 @@ $("datasetJunctionSelect")
 
 
 // ============================================================
-// UPDATE INTERSECTION
-// ============================================================
-//
-// Shows the latest actual record for selected junction.
-//
+// LIVE INTERSECTION
 // ============================================================
 
 function updateSelectedIntersection() {
 
-    if (!trafficData.length) {
-
-        setRoad(
-            "northRoad",
-            "NORTH",
-            0
-        );
-
-        setRoad(
-            "southRoad",
-            "SOUTH",
-            0
-        );
-
-        setRoad(
-            "eastRoad",
-            "EAST",
-            0
-        );
-
-        setRoad(
-            "westRoad",
-            "WEST",
-            0
-        );
-
-        return;
-
-    }
-
-
     const records =
-        trafficData.filter(row =>
-            Number(row.junction) ===
-            Number(selectedJunction)
+        trafficData.filter(
+            row =>
+                Number(row.junction) ===
+                Number(selectedJunction)
         );
 
 
@@ -880,48 +1054,58 @@ function updateSelectedIntersection() {
     }
 
 
-    // Last database record for selected junction
     const latest =
-        records[records.length - 1];
+        records.reduce(
+            (a, b) =>
+                Number(b.id || 0) >
+                Number(a.id || 0)
+                    ? b
+                    : a
+        );
+
+
+    /*
+        Your current backend record endpoint
+        returns vehicle_count, not separate
+        north/south/east/west fields.
+
+        Therefore we display the vehicle
+        count for the live intersection
+        instead of fake directional values.
+    */
+
+    const vehicles =
+        Number(
+            latest.vehicle_count || 0
+        );
 
 
     setRoad(
         "northRoad",
         "NORTH",
-        latest.north
+        vehicles
     );
-
 
     setRoad(
         "southRoad",
         "SOUTH",
-        latest.south
+        vehicles
     );
-
 
     setRoad(
         "eastRoad",
         "EAST",
-        latest.east
+        vehicles
     );
-
 
     setRoad(
         "westRoad",
         "WEST",
-        latest.west
+        vehicles
     );
-
-
-    // Update dashboard optimization
-    runDashboardOptimization();
 
 }
 
-
-// ============================================================
-// ROAD DISPLAY
-// ============================================================
 
 function setRoad(
     id,
@@ -937,18 +1121,22 @@ function setRoad(
 
 
     element.innerHTML = `
+
         ${direction}
 
         <strong>
-            ${number(value, 0)} cars
+            ${formatNumber(
+                number(value)
+            )} cars
         </strong>
+
     `;
 
 }
 
 
 // ============================================================
-// DATASET TABLE
+// DATASET PAGE
 // ============================================================
 
 function renderDataset() {
@@ -962,14 +1150,14 @@ function renderDataset() {
 
     const filter =
         $("datasetJunctionSelect")
-            ?.value || "all";
+            ?.value ||
+        "all";
 
 
     let rows =
         trafficData;
 
 
-    // Filter by selected junction
     if (filter !== "all") {
 
         rows =
@@ -977,23 +1165,28 @@ function renderDataset() {
                 row =>
                     String(
                         row.junction
-                    ) === String(filter)
+                    ) ===
+                    String(filter)
             );
 
     }
 
 
     // Record count
+
     if ($("junctionRecordCount")) {
 
         $("junctionRecordCount")
             .textContent =
-            formatNumber(rows.length);
+            formatNumber(
+                rows.length
+            );
 
     }
 
 
     // Title
+
     if ($("datasetTitle")) {
 
         $("datasetTitle")
@@ -1006,33 +1199,40 @@ function renderDataset() {
 
 
     // Subtitle
+
     if ($("datasetSubtitle")) {
 
         $("datasetSubtitle")
             .textContent =
             `Showing ${
-                formatNumber(rows.length)
+                formatNumber(
+                    rows.length
+                )
             } actual traffic records`;
 
     }
 
 
+    // Empty dataset
+
     if (!rows.length) {
 
         tbody.innerHTML = `
+
             <tr>
 
                 <td
                     colspan="12"
                     style="
                         text-align:center;
-                        padding:30px;
+                        padding:35px;
                     "
                 >
                     No records found.
                 </td>
 
             </tr>
+
         `;
 
         return;
@@ -1040,136 +1240,171 @@ function renderDataset() {
     }
 
 
-    // ========================================================
-    // LIMIT VISIBLE ROWS
-    // ========================================================
-    //
-    // Your database can contain 10,000 records.
-    // We display the first 500 in the browser so the UI
-    // remains fast.
-    //
-    // The record counter still shows the full count.
-    //
-    // ========================================================
+    /*
+        We don't insert 10,000 rows into the
+        browser at once.
+
+        Only 200 rows are displayed.
+        The record counter still shows
+        the REAL number of records.
+    */
 
     const visibleRows =
-        rows.slice(0, 500);
+        rows.slice(0, 200);
 
 
     tbody.innerHTML =
-        visibleRows.map(row => {
+        visibleRows.map(row => `
 
-            return `
+            <tr>
 
-                <tr>
-
-                    <td>
-                        ${escapeHTML(row.id)}
-                    </td>
-
-
-                    <td>
-                        Junction ${escapeHTML(
-                            row.junction
-                        )}
-                    </td>
+                <td>
+                    ${escapeHTML(
+                        row.id ?? "-"
+                    )}
+                </td>
 
 
-                    <td>
-                        ${number(row.north)}
-                    </td>
+                <td>
+                    Junction ${
+                        escapeHTML(
+                            row.junction ?? "-"
+                        )
+                    }
+                </td>
 
 
-                    <td>
-                        ${number(row.south)}
-                    </td>
+                <td>
+                    ${number(
+                        row.north ??
+                        row.vehicle_count
+                    )}
+                </td>
 
 
-                    <td>
-                        ${number(row.east)}
-                    </td>
+                <td>
+                    ${number(
+                        row.south ??
+                        row.vehicle_count
+                    )}
+                </td>
 
 
-                    <td>
-                        ${number(row.west)}
-                    </td>
+                <td>
+                    ${number(
+                        row.east ??
+                        row.vehicle_count
+                    )}
+                </td>
 
 
-                    <td>
-                        ${number(
-                            row.vehicle_count
-                        )}
-                    </td>
+                <td>
+                    ${number(
+                        row.west ??
+                        row.vehicle_count
+                    )}
+                </td>
 
 
-                    <td>
-                        ${number(
-                            row.average_speed,
-                            2
-                        )}
-                    </td>
+                <td>
+                    ${number(
+                        row.vehicle_count
+                    )}
+                </td>
 
 
-                    <td>
-                        ${number(
-                            row.lane_occupancy,
-                            2
-                        )}
-                    </td>
+                <td>
+                    ${number(
+                        row.average_speed,
+                        2
+                    )}
+                </td>
 
 
-                    <td>
-                        ${number(
-                            row.flow_rate,
-                            2
-                        )}
-                    </td>
+                <td>
+                    ${number(
+                        row.lane_occupancy,
+                        2
+                    )}
+                </td>
 
 
-                    <td>
-                        ${escapeHTML(
-                            row.time_of_day ||
-                            "-"
-                        )}
-                    </td>
+                <td>
+                    ${number(
+                        row.flow_rate,
+                        2
+                    )}
+                </td>
 
 
-                    <td>
-                        ${number(
-                            row.waiting_time,
-                            2
-                        )} sec
-                    </td>
-
-                </tr>
-
-            `;
-
-        }).join("");
+                <td>
+                    ${escapeHTML(
+                        row.time_of_day ??
+                        "-"
+                    )}
+                </td>
 
 
-    // Show message if more records exist
-    if (rows.length > 500) {
+                <td>
+                    ${number(
+                        row.waiting_time,
+                        2
+                    )} sec
+                </td>
+
+            </tr>
+
+        `).join("");
+
+
+    // Inform user that only first 200
+    // are visually displayed.
+
+    if (
+        rows.length >
+        visibleRows.length
+    ) {
 
         tbody.insertAdjacentHTML(
             "beforeend",
             `
-            <tr>
 
-                <td
-                    colspan="12"
-                    style="
-                        text-align:center;
-                        padding:18px;
-                        opacity:.7;
-                    "
-                >
-                    Showing first 500 of
-                    ${formatNumber(rows.length)}
-                    records.
-                </td>
+                <tr>
 
-            </tr>
+                    <td
+                        colspan="12"
+                        style="
+                            text-align:center;
+                            padding:18px;
+                            color:#7fa4c8;
+                        "
+                    >
+
+                        Showing first
+                        <strong>
+                            ${
+                                formatNumber(
+                                    visibleRows.length
+                                )
+                            }
+                        </strong>
+
+                        of
+
+                        <strong>
+                            ${
+                                formatNumber(
+                                    rows.length
+                                )
+                            }
+                        </strong>
+
+                        records.
+
+                    </td>
+
+                </tr>
+
             `
         );
 
@@ -1192,7 +1427,10 @@ function renderRecentRecords() {
 
 
     const rows =
-        trafficData.slice(-6).reverse();
+        trafficData.slice(
+            0,
+            6
+        );
 
 
     if (!rows.length) {
@@ -1206,51 +1444,43 @@ function renderRecentRecords() {
 
 
     container.innerHTML =
-        rows.map(row => {
+        rows.map(row => `
 
-            return `
+            <div class="mini-row">
 
-                <div class="mini-row">
+                <span>
+                    #${escapeHTML(row.id)}
+                </span>
 
-                    <span>
-                        #${escapeHTML(row.id)}
-                    </span>
+                <span>
+                    J${escapeHTML(
+                        row.junction
+                    )}
+                </span>
 
+                <span>
+                    ${number(
+                        row.vehicle_count
+                    )} cars
+                </span>
 
-                    <span>
-                        J${escapeHTML(
-                            row.junction
-                        )}
-                    </span>
+                <span>
+                    ${number(
+                        row.average_speed,
+                        1
+                    )} km/h
+                </span>
 
+                <span>
+                    ${number(
+                        row.waiting_time,
+                        1
+                    )} sec
+                </span>
 
-                    <span>
-                        ${number(
-                            row.vehicle_count
-                        )} cars
-                    </span>
+            </div>
 
-
-                    <span>
-                        ${number(
-                            row.average_speed,
-                            1
-                        )}
-                    </span>
-
-
-                    <span>
-                        ${number(
-                            row.waiting_time,
-                            1
-                        )} sec
-                    </span>
-
-                </div>
-
-            `;
-
-        }).join("");
+        `).join("");
 
 }
 
@@ -1270,11 +1500,10 @@ function renderIntersections() {
 
     if (!junctionData.length) {
 
-        container.innerHTML = `
-            <div class="loading">
+        container.innerHTML =
+            `<div class="loading">
                 No junction data.
-            </div>
-        `;
+             </div>`;
 
         return;
 
@@ -1282,76 +1511,74 @@ function renderIntersections() {
 
 
     container.innerHTML =
-        junctionData.map(item => {
+        junctionData.map(item => `
 
-            return `
+            <div class="intersection-card">
 
-                <div
-                    class="intersection-card"
-                >
-
-                    <h3>
-                        ${escapeHTML(
+                <h3>
+                    ${
+                        escapeHTML(
                             item.name ||
-                            `Junction ${
-                                item.id ||
-                                item.junction
-                            }`
-                        )}
-                    </h3>
+                            `Junction ${item.id}`
+                        )
+                    }
+                </h3>
 
 
-                    <div class="road-grid">
+                <div class="road-grid">
 
-                        ${roadBox(
+                    ${
+                        roadBox(
                             "North",
                             item.north
-                        )}
+                        )
+                    }
 
-                        ${roadBox(
+                    ${
+                        roadBox(
                             "South",
                             item.south
-                        )}
+                        )
+                    }
 
-                        ${roadBox(
+                    ${
+                        roadBox(
                             "East",
                             item.east
-                        )}
+                        )
+                    }
 
-                        ${roadBox(
+                    ${
+                        roadBox(
                             "West",
                             item.west
-                        )}
-
-                    </div>
-
-
-                    <br>
-
-
-                    <span>
-                        Status:
-                    </span>
-
-
-                    <strong>
-                        ${escapeHTML(
-                            item.status || "LOW"
-                        )}
-                    </strong>
+                        )
+                    }
 
                 </div>
 
-            `;
 
-        }).join("");
+                <br>
+
+                <span>
+                    Status:
+                </span>
+
+                <strong>
+                    ${
+                        escapeHTML(
+                            item.status ||
+                            "LOW"
+                        )
+                    }
+                </strong>
+
+            </div>
+
+        `).join("");
 
 }
 
-
-// ============================================================
-// ROAD BOX
-// ============================================================
 
 function roadBox(
     direction,
@@ -1363,12 +1590,15 @@ function roadBox(
         <div class="road-box">
 
             <span>
-                ${escapeHTML(direction)}
+                ${escapeHTML(
+                    direction
+                )}
             </span>
 
             <strong>
-                ${number(value, 0)}
-                cars
+                ${formatNumber(
+                    number(value)
+                )} cars
             </strong>
 
         </div>
@@ -1379,7 +1609,7 @@ function roadBox(
 
 
 // ============================================================
-// OPTIMIZATION
+// AI OPTIMIZATION
 // ============================================================
 
 $("runOptimization")
@@ -1401,7 +1631,8 @@ async function runOptimization() {
     const junction =
         Number(
             $("optimizationJunction")
-                .value
+                ?.value ||
+            selectedJunction
         );
 
 
@@ -1409,14 +1640,12 @@ async function runOptimization() {
         $("optimizationOutput");
 
 
-    if (!output) return;
+    if (output) {
 
+        output.innerHTML =
+            "Running optimization...";
 
-    output.innerHTML = `
-        <div class="loading">
-            Running AI optimization...
-        </div>
-    `;
+    }
 
 
     try {
@@ -1426,16 +1655,13 @@ async function runOptimization() {
                 "/api/optimize",
                 {
                     method: "POST",
-
                     headers: {
                         "Content-Type":
                             "application/json"
                     },
-
-                    body:
-                        JSON.stringify({
-                            junction
-                        })
+                    body: JSON.stringify({
+                        junction
+                    })
                 }
             );
 
@@ -1457,104 +1683,122 @@ async function runOptimization() {
         }
 
 
-        output.innerHTML = `
+        if (output) {
 
-            <h3>
-                ✓ Optimization Successful
-            </h3>
+            output.innerHTML = `
 
+                <h3>
+                    ✓ Optimization Successful
+                </h3>
 
-            <p>
-                <strong>
-                    Junction:
-                </strong>
+                <br>
 
-                ${data.junction}
-            </p>
+                <p>
+                    <strong>
+                        Junction:
+                    </strong>
 
+                    ${escapeHTML(
+                        data.junction
+                    )}
+                </p>
 
-            <p>
-                <strong>
-                    Algorithm:
-                </strong>
+                <p>
+                    <strong>
+                        Algorithm:
+                    </strong>
 
-                ${escapeHTML(
-                    data.algorithm
-                )}
-            </p>
+                    ${escapeHTML(
+                        data.algorithm
+                    )}
+                </p>
 
+                <p>
+                    <strong>
+                        Objective:
+                    </strong>
 
-            <p>
-                <strong>
-                    Objective:
-                </strong>
+                    ${escapeHTML(
+                        data.objective
+                    )}
+                </p>
 
-                ${escapeHTML(
-                    data.objective
-                )}
-            </p>
+                <br>
 
+                <div class="road-grid">
 
-            <div class="road-grid">
+                    ${
+                        roadBox(
+                            "North Green",
+                            data.signals?.north
+                        )
+                    }
 
-                ${roadBox(
-                    "North Green",
-                    data.signals.north
-                )}
+                    ${
+                        roadBox(
+                            "South Green",
+                            data.signals?.south
+                        )
+                    }
 
-                ${roadBox(
-                    "South Green",
-                    data.signals.south
-                )}
+                    ${
+                        roadBox(
+                            "East Green",
+                            data.signals?.east
+                        )
+                    }
 
-                ${roadBox(
-                    "East Green",
-                    data.signals.east
-                )}
+                    ${
+                        roadBox(
+                            "West Green",
+                            data.signals?.west
+                        )
+                    }
 
-                ${roadBox(
-                    "West Green",
-                    data.signals.west
-                )}
+                </div>
 
-            </div>
+                <br>
 
+                <p>
 
-            <p>
-                Improvement:
+                    Improvement:
 
-                <strong
-                    class="green-text"
-                >
-                    ${data.improvement}%
-                </strong>
-            </p>
+                    <strong
+                        class="green-text"
+                    >
+                        ${escapeHTML(
+                            data.improvement
+                        )}%
 
-        `;
+                    </strong>
+
+                </p>
+
+            `;
+
+        }
 
 
         updateSignalTable(data);
 
-
     }
     catch (error) {
 
-        output.innerHTML = `
-            <div class="error">
-                ${escapeHTML(
-                    error.message
-                )}
-            </div>
-        `;
+        if (output) {
+
+            output.innerHTML =
+                `<div class="error">
+                    ${escapeHTML(
+                        error.message
+                    )}
+                 </div>`;
+
+        }
 
     }
 
 }
 
-
-// ============================================================
-// DASHBOARD OPTIMIZATION
-// ============================================================
 
 async function runDashboardOptimization() {
 
@@ -1565,17 +1809,14 @@ async function runDashboardOptimization() {
                 "/api/optimize",
                 {
                     method: "POST",
-
                     headers: {
                         "Content-Type":
                             "application/json"
                     },
-
-                    body:
-                        JSON.stringify({
-                            junction:
-                                selectedJunction
-                        })
+                    body: JSON.stringify({
+                        junction:
+                            selectedJunction
+                    })
                 }
             );
 
@@ -1627,70 +1868,70 @@ async function runDashboardOptimization() {
 }
 
 
-// ============================================================
-// SIGNAL TABLE
-// ============================================================
-
 function updateSignalTable(data) {
 
     const container =
         $("signalRows");
 
 
-    if (!container) return;
+    if (
+        !container ||
+        !data.signals
+    ) {
+
+        return;
+
+    }
 
 
     const directions = [
+
         ["North", "north"],
+
         ["South", "south"],
+
         ["East", "east"],
+
         ["West", "west"]
+
     ];
 
 
     container.innerHTML =
         directions.map(
-            ([name, key]) => {
+            ([name, key]) => `
 
-                return `
+                <div
+                    class="signal-row"
+                >
 
-                    <div
-                        class="signal-row"
-                    >
+                    <span>
+                        ${name}
+                    </span>
 
-                        <span>
-                            ${name}
-                        </span>
+                    <strong>
+                        ${
+                            data.signals[key]
+                        } sec
+                    </strong>
 
+                    <span>
+                        ${
+                            data.yellow ??
+                            5
+                        } sec
+                    </span>
 
-                        <strong>
-                            ${number(
-                                data.signals[key]
-                            )}
-                            sec
-                        </strong>
+                    <span>
+                        ${
+                            data.red?.[key] ??
+                            "-"
+                        } sec
+                    </span>
 
+                </div>
 
-                        <span>
-                            ${number(
-                                data.yellow
-                            )}
-                            sec
-                        </span>
-
-
-                        <span>
-                            ${number(
-                                data.red[key]
-                            )}
-                            sec
-                        </span>
-
-                    </div>
-
-                `;
-
-            }
+            `
         ).join("");
 
 }
@@ -1705,14 +1946,7 @@ $("uploadButton")
         "click",
         () => {
 
-            const fileInput =
-                $("datasetFile");
-
-
-            if (!fileInput) return;
-
-
-            fileInput.click();
+            $("datasetFile")?.click();
 
         }
     );
@@ -1727,15 +1961,9 @@ $("datasetFile")
 
 async function uploadDataset() {
 
-    const input =
-        $("datasetFile");
-
-
-    if (!input) return;
-
-
     const file =
-        input.files[0];
+        $("datasetFile")
+            ?.files[0];
 
 
     if (!file) return;
@@ -1750,8 +1978,6 @@ async function uploadDataset() {
         alert(
             "Please select a CSV file."
         );
-
-        input.value = "";
 
         return;
 
@@ -1774,8 +2000,7 @@ async function uploadDataset() {
 
     if (button) {
 
-        button.disabled =
-            true;
+        button.disabled = true;
 
         button.textContent =
             "Uploading...";
@@ -1800,6 +2025,7 @@ async function uploadDataset() {
 
 
         if (
+            !response.ok ||
             data.status !==
             "success"
         ) {
@@ -1813,18 +2039,18 @@ async function uploadDataset() {
 
 
         alert(
-            "Dataset uploaded successfully!\n\n" +
+            "Upload successful!\n\n" +
             "Inserted records: " +
             data.inserted +
-            "\n\n" +
+            "\n" +
             "Total records: " +
             data.total_records
         );
 
 
-        // Reload actual database data
-        await loadAllData();
+        // Reload database data.
 
+        await loadAllData();
 
     }
     catch (error) {
@@ -1845,8 +2071,7 @@ async function uploadDataset() {
 
         if (button) {
 
-            button.disabled =
-                false;
+            button.disabled = false;
 
             button.textContent =
                 "⬆ Upload CSV";
@@ -1854,7 +2079,11 @@ async function uploadDataset() {
         }
 
 
-        input.value = "";
+        if ($("datasetFile")) {
+
+            $("datasetFile").value = "";
+
+        }
 
     }
 
@@ -1894,41 +2123,49 @@ function startSimulation() {
     area.innerHTML = "";
 
 
-    // Get selected junction records
     const records =
         trafficData.filter(
             row =>
                 Number(row.junction) ===
-                Number(
-                    $("simulationJunction")
-                        ?.value || 1
-                )
+                selectedJunction
         );
 
 
-    let carCount = 15;
-
-
-    if (records.length) {
-
-        const latest =
-            records[records.length - 1];
-
-
-        carCount =
-            Math.max(
-                5,
-                Math.min(
-                    40,
-                    Math.round(
-                        Number(
-                            latest.vehicle_count
-                        ) / 3
+    const latest =
+        records.length
+            ? records.reduce(
+                (a, b) =>
+                    Number(
+                        b.id || 0
+                    ) >
+                    Number(
+                        a.id || 0
                     )
-                )
-            );
+                        ? b
+                        : a
+            )
+            : null;
 
-    }
+
+    const total =
+        latest
+            ? Number(
+                latest.vehicle_count ||
+                15
+            )
+            : 15;
+
+
+    const carCount =
+        Math.max(
+            5,
+            Math.min(
+                40,
+                Math.round(
+                    total / 3
+                )
+            )
+        );
 
 
     for (
@@ -1948,18 +2185,18 @@ function startSimulation() {
 
 
         car.style.left =
-            Math.random() *
-            90 +
+            Math.random() * 90 +
             "%";
 
 
         car.style.top =
-            Math.random() *
-            90 +
+            Math.random() * 90 +
             "%";
 
 
-        area.appendChild(car);
+        area.appendChild(
+            car
+        );
 
     }
 
@@ -1972,22 +2209,20 @@ function startSimulation() {
                     .querySelectorAll(
                         ".car"
                     )
-                    .forEach(
-                        car => {
+                    .forEach(car => {
 
-                            car.style.left =
-                                Math.random() *
-                                90 +
-                                "%";
+                        car.style.left =
+                            Math.random() *
+                            90 +
+                            "%";
 
 
-                            car.style.top =
-                                Math.random() *
-                                90 +
-                                "%";
+                        car.style.top =
+                            Math.random() *
+                            90 +
+                            "%";
 
-                        }
-                    );
+                    });
 
             },
             700
@@ -2004,8 +2239,7 @@ function stopSimulation() {
             simulationTimer
         );
 
-        simulationTimer =
-            null;
+        simulationTimer = null;
 
     }
 
@@ -2036,97 +2270,116 @@ function renderReports() {
 
 
     container.innerHTML =
-        junctionData.map(item => {
+        junctionData.map(item => `
 
-            return `
+            <div
+                class="report-row"
+            >
 
-                <div
-                    class="report-row"
-                >
-
-                    <strong>
-                        ${escapeHTML(
+                <strong>
+                    ${
+                        escapeHTML(
                             item.name ||
-                            `Junction ${
-                                item.id ||
-                                item.junction
-                            }`
-                        )}
-                    </strong>
+                            `Junction ${item.id}`
+                        )
+                    }
+                </strong>
 
-
-                    <span>
-                        ${number(
-                            item.vehicles ??
-                            item.average_vehicles ??
-                            0,
+                <span>
+                    ${
+                        number(
+                            item.vehicles,
                             1
-                        )}
-                        vehicles
-                    </span>
+                        )
+                    }
+                    vehicles
+                </span>
 
-
-                    <span>
-                        ${number(
+                <span>
+                    ${
+                        number(
                             item.waiting_time ??
-                            item.waiting ??
-                            0,
+                            item.waiting,
                             1
-                        )}
-                        sec waiting
-                    </span>
+                        )
+                    }
+                    sec waiting
+                </span>
 
-
-                    <span>
-                        ${number(
+                <span>
+                    ${
+                        number(
                             item.average_speed ??
-                            item.speed ??
-                            0,
+                            item.speed,
                             1
-                        )}
-                        speed
-                    </span>
+                        )
+                    }
+                    km/h
+                </span>
 
-
-                    <span>
-                        ${escapeHTML(
+                <span>
+                    ${
+                        escapeHTML(
                             item.status ||
                             "LOW"
-                        )}
-                    </span>
+                        )
+                    }
+                </span>
 
-                </div>
+            </div>
 
-            `;
-
-        }).join("");
+        `).join("");
 
 }
 
 
 // ============================================================
-// DATASET REFRESH BUTTON SUPPORT
+// LOAD EVERYTHING
 // ============================================================
 
-window.refreshDataset = async function () {
+async function loadAllData() {
 
-    await loadTrafficData();
+    console.log(
+        "Starting Smart Traffic Management..."
+    );
 
-};
+
+    await Promise.all([
+
+        loadStatistics(),
+
+        loadTrafficData(),
+
+        loadJunctions(),
+
+        testDatabase()
+
+    ]);
+
+
+    updateSelectedIntersection();
+
+    renderDataset();
+
+    renderIntersections();
+
+    renderReports();
+
+
+    console.log(
+        "Smart Traffic Management loaded."
+    );
+
+}
 
 
 // ============================================================
-// INITIAL LOAD
+// START APPLICATION
 // ============================================================
 
 document.addEventListener(
     "DOMContentLoaded",
     () => {
-
-        console.log(
-            "Smart Traffic Management loaded."
-        );
-
 
         loadAllData();
 
